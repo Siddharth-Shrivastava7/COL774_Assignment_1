@@ -1,1 +1,1 @@
-# COL774_Assignment_1
+# Q1 - Linear Regression 
