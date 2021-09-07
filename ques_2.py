@@ -1,0 +1,313 @@
+import numpy as np
+import matplotlib.pyplot as plt
+import time
+import pandas as pd 
+from mpl_toolkits import mplot3d
+
+### part a 
+
+start_time = time.time()   
+
+def generate_data_points(theta, samples):
+    mu1, sigma1 = 3, np.sqrt(4) # given 
+    # x1 = np.random.normal(mu1, sigma1, int(samples))  
+    x1 = np.random.RandomState(seed=7).normal(mu1, sigma1, int(samples))  
+    x1 = np.expand_dims(x1, axis=1) 
+    # print(x1.shape) # (1000000,1) 
+    # print(x1)
+    mu2, sigma2 = -1, np.sqrt(4) # given 
+    # x2 = np.random.normal(mu2, sigma2, int(samples))  
+    x2 = np.random.RandomState(seed=16).normal(mu2, sigma2, int(samples))  
+    x2 = np.expand_dims(x2, axis=1) 
+    x0 = np.ones(int(samples)) # given
+    x0 = np.expand_dims(x0, axis=1) 
+    x_data = np.hstack((x0,x1,x2))  
+    # print(x_data.shape)   # (1000000, 3) 
+
+    mu_eps, sigma_eps = 0, np.sqrt(2) # given 
+    # epsilon = np.random.normal(mu_eps, sigma_eps, int(samples))  
+    epsilon = np.random.RandomState(seed=9).normal(mu_eps, sigma_eps, int(samples))  
+    epsilon = np.expand_dims(epsilon, axis=1) 
+
+    y_data = np.dot(x_data, theta) + epsilon  
+    # print(y_data.shape)  # (1000000,1) 
+    # y_data_2 = theta[0] + theta[1] * x1 + theta[2] * x2 + epsilon   
+    # print(np.all(y_data == y_data_2))  # True
+
+    return y_data, x_data 
+
+
+theta = np.array((3,1,2))   
+theta = np.expand_dims(theta, axis=1)
+samples = 1e6  
+y_data, x_data = generate_data_points(theta, samples)   ## generating data points 
+# print(y_data)
+
+# print(y_data.shape)  
+# print(x1.shape)
+# print(x2.shape)
+
+### part a  
+
+### part b 
+
+## shuffle the examples (initial step)
+
+## fixed random sequence for repeatable result  
+# np.random.seed(1)   ## not using .. not efficient 
+# rng = np.random.RandomState(2021) 
+# shuffle_indices = np.random.permutation(int(samples))  
+
+shuffle_indices = np.random.RandomState(seed=50).permutation(int(samples))  
+
+# print(shuffle_indices)
+# # input 
+
+x_data_shuffled = x_data[shuffle_indices, :] 
+
+# print(x_data_shuffled.shape) #(1000000, 3)   
+# x1_shuffled = x1[shuffle_indices] 
+# x2_shuffled = x2[shuffle_indices]
+# # output GT 
+
+y_data_shuffled = y_data[shuffle_indices]   
+
+# print(y_data_shuffled.shape)  # (1000000, 1)
+ 
+# ## shuffle the examples (initial step)
+
+# ## round robin fashion traversal 
+
+r = [1, 100, 10000, 1000000]   ## batch_sizes  
+eta_lr = 0.001 
+theta_param = np.array((0, 0, 0)) ## intialise   
+theta_param = np.expand_dims(theta_param, axis=1) 
+# num_iterations = int(samples) // r 
+
+def model_fit(x, y, theta, lr, batch_size): 
+    counter = 0 
+    future_counter = 1
+    run_past_avg_cost = 0.0  
+    run_future_avg_cost = 0.0 
+    theta0_lst = []
+    theta1_lst = [] 
+    theta2_lst = [] 
+    # best_J = -1e6  
+    num_iterations = y.shape[0] // batch_size
+    cost = []
+    avg_diff_cost = []
+    # print(num_iterations)
+    for iter in range(num_iterations):   ## one epoch 
+        # counter = counter + 1 
+    #     # input 
+        x_batch = x[iter*batch_size : (iter+1) * batch_size, :] 
+        # print(x_batch.shape) 
+    #     x1_batch = x1_shuffled[i*r : (i+1) * r] 
+    #     x2_batch = x2_shuffled[i*r : (i+1) * r] 
+    #     # output GT  
+        y_batch = y[iter*batch_size : (iter+1) * batch_size]  
+
+    #     x_batch = np.vstack((x0, x1, x2))
+    #     # prediction 
+    #     pred_batch = theta_model_params[0] + theta_model_params[1]*x1_batch + theta_model_params[2]*x2_batch
+        y_pred_batch = np.dot(x_batch, theta) 
+    #     # cost/loss function per batch 
+        
+        ## mini batch &/ stochastic gradient descent   
+        J_theta = np.sum((y_batch - y_pred_batch)**2) / (2*batch_size)  
+        # cost.append(J_theta)   
+        # print(J_theta) 
+        # grad_J_wrt_theta = np.sum((y_batch - y_pred_batch)*x_batch) / (batch_size)  ## not correct dimensionally 
+        grad_J_wrt_theta = -1 * np.dot(np.transpose(x_batch),(y_batch-y_pred_batch)) / (batch_size)  
+        # print(grad_J_wrt_theta)
+        theta = theta - lr * grad_J_wrt_theta         
+        # print(theta.shape) # (3, 1)  
+        # theta_lst.append(theta)  
+        # print(theta[0]) 
+        theta0_lst.append(np.sum(theta[0]))
+        theta1_lst.append(np.sum(theta[1]))
+        theta2_lst.append(np.sum(theta[2]))
+        
+        ## convergence criteria  
+        # k = 1000 # hyperparam 
+        # eps = 900 # hyperparam  
+        # if num_iterations > k: 
+        #     counter = counter + 1   
+        #     run_past_avg_cost += J_theta 
+        #     # print(counter)
+        #     if counter == k: 
+        #         # print('<<<<<')
+        #         run_past_avg_cost /= k 
+        #         theta_present = theta  
+        #         future_counter = 0 
+        #     if future_counter == 0: 
+        #         counter -= 2 
+        #         # print('>>>>>')
+        #         run_future_avg_cost += J_theta
+        #         if counter == 0: 
+        #             # print('$$$$$$$$$$$$$$$')
+        #             run_future_avg_cost /= k 
+        #             avg_cost_diff = abs(run_past_avg_cost - run_future_avg_cost) 
+        #             # print(avg_cost_diff) 
+        #             avg_diff_cost.append(avg_cost_diff)
+        #             if avg_cost_diff < eps:
+        #                 print('^^^^^^')
+        #                 print(iter)
+        #                 return theta_present 
+        #             else: 
+        #                 future_counter = 1  
+        
+                  
+        # param update  
+    # graph 
+    # x = np.arange(num_iterations) 
+    # y = np.array(cost)
+    # plt.plot(x,y) 
+    # plt.plot(cost)  ## for plot command only one y function value is enough  
+    # print(num_iterations) 
+    # plt.plot(avg_diff_cost)
+    # plt.plot(np.array(cost))
+
+    # print(theta_lst)  
+    # for arr in theta_lst:  
+    #     # print(arr[0])  
+    #     # print('***********')  
+    #     theta0_lst.append(arr[0])
+    #     theta1_lst.append(arr[1])
+    #     theta2_lst.append(arr[2]) 
+
+    # print(len(theta0_lst)) 
+    # print(theta_lst)
+    # print(cost)
+    theta0_arr = np.array(theta0_lst) 
+    theta1_arr = np.array(theta1_lst)  
+    theta2_arr = np.array(theta2_lst) 
+    fig = plt.figure()   
+    ax = plt.axes(projection='3d')  
+    # ax = fig.add_subplot(111, projection='3d')
+    # ax.plot_wireframe(theta0_arr, theta1_arr, theta2_arr)
+    # ax.plot_trisurf(theta0_arr, theta1_arr, theta2_arr, linewidth=0, antialiased=False)  
+    # ax.plot_trisurf(theta0_arr, theta1_arr, theta2_arr)  
+    
+    # xx, yy = np.meshgrid(theta0_arr, theta1_arr) 
+    # print(xx.shape)
+    # print(yy.shape)
+    # print(xx)
+    # print(theta0_arr) 
+    # print(yy)
+    # theta2_arr = theta2_arr.reshape(xx) 
+    # print(theta2_arr.shape)
+
+    # ax.contour3D(theta0_arr, theta1_arr, theta2_arr, 50, cmap='binary') 
+    # plt.plot(xx, yy, theta2_arr)
+    # ax.quiver()
+    
+    plt.show() 
+    return theta
+
+theta_optim = model_fit(x_data_shuffled, y_data_shuffled, theta_param, eta_lr, batch_size = r[2])  ## fitting model to the data
+
+# print(theta_optim)  
+# print(time.time() - start_time)
+
+
+## r0_model 
+## fast with convergence criteria 
+# [[3.03393716]
+#  [1.01647259]
+#  [1.95373921]]
+ 
+# EPOCH 
+
+# [[3.01997477]
+#  [0.99947612]
+#  [1.97689723]]
+
+
+## r1_model 
+# [[2.81723859]
+#  [1.03951594]
+#  [1.98562532]]
+
+
+## r2_model = 
+# [[0.24456829]
+#  [0.91568265]
+#  [0.46548425]]
+
+
+# r3_model = [[0.00399512]
+#  [0.01598531]
+#  [0.00400578]] 
+
+
+### predictions  (for test)
+
+test_path = '/home/siddharth/Documents/Assisgnments/COL774_ML/ass1_data/data/q2/q2test.csv' 
+df = pd.read_csv(test_path)  
+# print(df) 
+# print(df['X_1']) 
+x1 = np.array(df['X_1']) 
+x1 = np.expand_dims(x1, axis =1) 
+x2 = np.array(df['X_2']) 
+x2 = np.expand_dims(x2, axis =1)  
+# print(x1.shape) 
+# print(x2.shape)
+x0 = np.ones(x1.shape[0]) 
+x0 = np.expand_dims(x0, axis=1)
+# print(x0.shape)
+x_test = np.hstack((x0, x1, x2))
+y_test = np.array(df['Y']) 
+y_test = np.expand_dims(y_test, axis = 1) 
+# print(y_test.shape)
+
+## original hypothesis  
+y_pred_original = np.dot(x_test, theta)  
+# print(y_pred_original.shape)  
+# print(y_pred_original)
+#mse for original hyopthesis    
+MSE_org = np.sum((y_test - y_pred_original)**2) / (x1.shape[0])
+# print(MSE_org) # 1.965893843
+
+## hypo for r0 learned model 
+# r0 epoch 
+theta_ro_ep =  np.array((3.01997477, 0.99947612, 1.97689723))
+theta_ro_ep = np.expand_dims(theta_ro_ep, axis=1)
+y_pred_ro_ep = np.dot(x_test, theta_ro_ep)
+# mse 
+MSE_ro_ep = np.sum((y_test - y_pred_ro_ep)**2) / (x1.shape[0])
+# print(MSE_ro_ep) # 2.0278262307193518 
+
+## hypo for r0 learned model 
+# ro by convergence 
+theta_ro_cov = np.array((3.03393716 ,  1.01647259 , 1.95373921))
+theta_ro_cov = np.expand_dims(theta_ro_cov, axis=1)
+y_pred_ro_cov = np.dot(x_test, theta_ro_cov)
+#mse 
+MSE_ro_cov = np.sum((y_test - y_pred_ro_cov)**2) / (x1.shape[0]) 
+# print(MSE_ro_cov)   # 2.2303108247356773   ## no not good enough to test 
+
+## hypo for r1 learned model 
+theta_r1 = np.array((2.81723859, 1.03951594, 1.98562532 )) 
+theta_r1 = np.expand_dims(theta_r1, axis=1) 
+y_pred_r1 = np.dot(x_test, theta_r1)  
+# mse 
+MSE_r1 = np.sum((y_test - y_pred_r1)**2) / (x1.shape[0]) 
+# print(MSE_r1)  # 2.159324519029886  
+
+## hypo for r2 learned model 
+theta_r2 = np.array((0.24456829, 0.91568265, 0.46548425)) 
+theta_r2 = np.expand_dims(theta_r2, axis=1)  
+y_pred_r2 = np.dot(x_test, theta_r2) 
+# mse 
+MSE_r2 = np.sum((y_test - y_pred_r2)**2) / (x1.shape[0]) 
+# print(MSE_r2) # 241.67350507149743 
+
+## hypo for r3 learned model 
+theta_r3 = np.array((0.00399512, 0.01598531, 0.00400578)) 
+theta_r3 = np.expand_dims(theta_r3, axis=1)  
+y_pred_r3 = np.dot(x_test, theta_r3) 
+# mse 
+MSE_r3 = np.sum((y_test - y_pred_r3)**2) / (x1.shape[0]) 
+# print(MSE_r3) # 503.089313071857
+
