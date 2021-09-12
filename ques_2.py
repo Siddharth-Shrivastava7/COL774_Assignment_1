@@ -39,11 +39,11 @@ def generate_data_points(theta, samples):
     return y_data, x_data 
 
 
-def examplePlot():
-    fig = plt.figure()
-    ax = plt.axes(projection='3d')  
-    # do some plotting
-    return fig
+# def examplePlot():
+#     fig = plt.figure()
+#     ax = plt.axes(projection='3d')  
+#     # do some plotting
+#     return fig
 
 theta = np.array((3,1,2))   
 theta = np.expand_dims(theta, axis=1)

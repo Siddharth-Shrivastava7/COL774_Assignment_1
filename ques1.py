@@ -6,8 +6,7 @@ from mpl_toolkits import mplot3d
 from matplotlib.animation import FuncAnimation
 # from matplotlib import animation
 plt.style.use('seaborn-pastel')
-# from tqdm import tqdm 
-# import plotly.graph_objects as go 
+
 
 ## load and preprocess the data 
 
