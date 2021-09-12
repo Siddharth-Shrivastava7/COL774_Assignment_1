@@ -56,7 +56,13 @@ def grad_logistic(x,y, y_pred):
     return grad 
 
 def hessian_logistic(x,y_pred):
-    hessian = np.linalg.multi_dot([np.transpose(x), y_pred, np.transpose(1-y_pred), x]) / x.shape[0]
+    # eps = 1e-21 ## adding for calculating inverse
+    diagonal = np.diag(np.diag(np.dot(y_pred, np.transpose(1-y_pred))))
+    # print(diagonal.shape)
+    hessian = np.linalg.multi_dot([np.transpose(x), diagonal, x])  / x.shape[0]
+    # hessian = np.linalg.multi_dot([np.transpose(x), y_pred, np.transpose(1-y_pred), x])  / x.shape[0]
+    # hessian = (np.linalg.multi_dot([np.transpose(x), y_pred, np.transpose(1-y_pred), x]) + eps) / (x.shape[0] + eps)
+    # hessian = np.linalg.multi_dot([np.transpose(x), x, np.transpose(1-y_pred), y_pred]) / x.shape[0] ## wrong imple
     return hessian
 
 # hessian = hessian_logistic(x_norm_data, y_pred_sigmoid)
@@ -68,6 +74,7 @@ def hessian_logistic(x,y_pred):
 def newton_model_fit(x,y,iterations, theta, eps): 
     grad_lst = []
     for iter in range(iterations):
+        # print(iter)
         y_pred = pred_sigmoid(x,theta) 
         grad = grad_logistic(x,y,y_pred)
         hessian = hessian_logistic(x,y_pred)
@@ -75,30 +82,56 @@ def newton_model_fit(x,y,iterations, theta, eps):
         theta = theta - np.dot(hessian_inv, grad) 
         grad_lst.append(grad)
         ## covergence condition on grad 
-        if grad < eps: 
+        if (abs(grad[0]) < eps) and (abs(grad[1]) < eps) and (abs(grad[2]) < eps): 
+            print(iter)
             print('stop iterating')
-            return grad_lst
-    return grad_lst
+            return grad_lst, theta 
+    return grad_lst, theta
 
 
 x_data, y_data = load_create_data(ipx_path, opy_path) 
 x_norm_data = normalise_data(x_data)
 theta = np.zeros((x_norm_data.shape[1],1))  
-# print(theta.shape) # (3, 1)
+# print(theta.shape) # (3, 1) 
 
-y_pred_sigmoid = pred_sigmoid(x_norm_data, theta) 
+
+# y_pred_sigmoid = pred_sigmoid(x_norm_data, theta) 
 # y_pred_sigmoid = pred_sigmoid(x_data, theta) 
-hessian = hessian_logistic(x_norm_data, y_pred_sigmoid)  
+# hessian = hessian_logistic(x_norm_data, y_pred_sigmoid)  
 # print(np.linalg.eig(hessian))
-
-hessian_inv = np.linalg.inv(hessian)
+# hessian_inv = np.linalg.inv(hessian)
 # print(hessian_inv)
 
-iterations = 100  ##hyperparam
-eps = 1e-5 ##hyperparam
+iterations = 1000  ##hyperparam
+eps = 1e-16 ##hyperparam
 
-# grad_lst = newton_model_fit(x_norm_data, y_data, iterations, theta, eps)
+grad_lst, theta = newton_model_fit(x_norm_data, y_data, iterations, theta, eps)
 # plt.plot(grad_lst)
 # plt.savefig('try.png')
+# print(grad_lst) 
+## 9 iter for mag of each grad compo < 1e-16
+# print('*********') 
+# print(theta) 
+## optimal theta  
+# [[ 0.40125316]
+#  [ 2.5885477 ]
+#  [-2.72558849]]
 
+### part b
+index_0 = np.argwhere(y_data==0)    
+index_1 = np.argwhere(y_data==1)   
+# print(index_1[:,0])
+plt.scatter(x_norm_data[index_0[:,0], 1], x_norm_data[index_0[:,0], 2], marker='o')
+plt.scatter(x_norm_data[index_1[:,0], 1], x_norm_data[index_1[:,0], 2], marker='x') 
+# plt.savefig('try.png') 
 
+## line obtain by the logistic regression
+
+decision_boundary = theta[0] + theta[1] * x_norm_data[:,1]
+# decision_boundary /= theta[2]
+# print(theta[2])
+# print(decision_boundary.shape) 
+# print(decision_boundary) 
+plt.plot(x_norm_data[:,1], decision_boundary, 'black') 
+# plt.savefig('try.png')
+plt.savefig('ques3_b.png')
