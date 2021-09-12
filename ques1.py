@@ -91,7 +91,8 @@ def model_fit(epochs, lr, x_data, y_data, theta):
     cost_lst = []
     theta0_lst = []
     theta1_lst = []
-    eps = 0.12e-5   #  (0.12e-5 (for part 1a))
+    # eps = 1.2e-6  #  (for lr 0.1))
+    eps = 1.2e-1 #(lr 0.001) 
     for ep in range(epochs):  
         y_pred = pred(x_data, theta) 
         J_theta = loss(y_data, y_pred) 
@@ -104,8 +105,7 @@ def model_fit(epochs, lr, x_data, y_data, theta):
         theta1_lst.append(theta[1].tolist()[0])
 
         ## convergence criteria  
-        k = 2 # hyperparam 
-        # eps = 900 # hyperparam  
+        k = 2 # hyperparam  
         if epochs > k: 
             counter = counter + 1   
             run_past_avg_cost += J_theta 
@@ -135,24 +135,33 @@ def model_fit(epochs, lr, x_data, y_data, theta):
                         future_counter = 1  
 
     # plt.plot(avg_diff_cost)  
-    # plt.plot(cost)
+    # plt.plot(cost_lst)
+    # plt.savefig('try.png')
     # plt.show()
     return theta, cost_lst, theta0_lst, theta1_lst   
 
-epochs = 1000 # hyper param
-lr = 0.1  # hyper param
+epochs = 12000 # hyper param
+# lr = 0.1  # hyper param   94 epochs eps: 1.2e-6 k=2  
+lr = 0.001 # 9185 epochs 1.2e-6 k=2
+# lr = 0.025 # 367 epochs 1.2e-6 k=2
 theta = np.zeros((2,1))  ## intial param  
 # print(theta.shape) 
 # theta = np.expand_dims(theta, axis=1)  
 
 
 theta_optim, cost_lst, theta0_lst, theta1_lst  = model_fit(epochs, lr, x_norm_data, y_data, theta)  
-# print(theta_optim)    
+print(theta_optim)    
 # print(len(cost_lst))
 # print(len(theta1_lst))
 # print(len(theta0_lst))
-# # [[0.99657029]
+# lr:0.1 # # [[0.99657029]
 #  [0.00134013]]  
+# lr: 0.025 
+## [[0.99653052]
+#  [0.00134008]]
+# lr: 0.001 
+# [[0.99651845]
+#  [0.00134006]]
 
 # def plot_2d(lst, color):
 #     fig = plt.figure()
@@ -273,23 +282,26 @@ class plot2d_curve:
         # self.iterations.append(i) 
         self.contour.set_data(self.iterations[:i], self.cost_arr[:i])
         self.axes.set_xlim([0,self.cost_arr.shape[0]])
-        self.axes.set_ylim([0,np.max(self.cost_arr)+np.min(self.cost_arr)])
+        self.axes.set_ylim([0,np.max(self.cost_arr)])
         # self.contour.set_data(self.iterations, cost_lst[:i])
         return self.contour, 
 
     def plot(self):
-        self.contour, = self.axes.plot([], [], 'b', lw=1, linestyle='dashed', marker='x', markersize=4) 
+        # self.contour, = self.axes.plot([], [], 'b', lw=1, linestyle='dashed', marker='x', markersize=4) 
+        self.contour, = self.axes.plot([], [], 'b', lw=1, linestyle='dashed') 
         anim = FuncAnimation(self.figure, self.animation, init_func=self.initialise,
                                frames=self.cost_arr.shape[0], interval=200)
-        anim.save('q1_loss_curve_d.gif', writer='imagemagick')      
-
-        print('yo')
+        anim.save('q1_loss_curve_e_001.gif', writer='imagemagick')      
+        
+        # print('yo') 
         return 
         
 
-# plot2d = plot2d_curve(cost_lst)
-# plot2d.plot()      
+plot2d = plot2d_curve(cost_lst)
+plot2d.plot()      
         
+## part e 
+
 
 
 
