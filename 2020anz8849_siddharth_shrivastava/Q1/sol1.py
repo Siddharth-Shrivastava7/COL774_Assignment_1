@@ -47,8 +47,6 @@ def main(args):
 
 ## load and preprocess the data 
 
-
-
 def load_create_data(ipx_path, opy_path):
     x_data = pd.read_csv(ipx_path, header = None)
     x_data = np.array(x_data) 
@@ -214,7 +212,7 @@ class plot2d_curve:
         self.contour, = self.axes.plot([], [], 'b', lw=1, linestyle='dashed', marker='x', markersize=4) 
         anim = FuncAnimation(self.figure, self.animation, init_func=self.initialise,
                                frames=self.cost_arr.shape[0], interval=200)
-        anim.save('q1_loss_curve_e_025.gif', writer='imagemagick')      
+        anim.save('q1_loss_curve_e_001.gif', writer='imagemagick')      
         # print('yo') 
         return 
            
